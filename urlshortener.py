@@ -62,7 +62,10 @@ def urlshortener_lengthen(short_url):
     cursor = connection.execute("select long_url from entries where short_url=?",
             [short_url])
 
-    long_url = cursor.fetchone()[0]
+    long_url = cursor.fetchone()
+
+    if long_url is None:
+        return flask.url_for("urlshortener")
 
     return flask.redirect(long_url)
 
