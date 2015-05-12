@@ -1,0 +1,17 @@
+{% extends "layout.html" %}
+{% block main %}
+
+    <h2>Long URL</h2>
+    <form action="{{ url_for('urlshortener_shorten') }}" method="post">
+        <input type="text" name="long_url">
+        <input type="submit" value="Submit">
+    </form>
+
+    <h2>Short URL</h2>
+    {% if short_url %}
+        <p>{{ short_url }}<p>
+    {% else %}
+        <p>No URL<p>
+    {% endif %}
+
+{% endblock %}
