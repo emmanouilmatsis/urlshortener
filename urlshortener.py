@@ -29,43 +29,43 @@ def close_database_connection(exception):
         flask.g.database_connection.close()
 
 
-@app.route("/", methods=["GET"])
+@app.route("/", methods=["GET", "POST"])
 def urlshortener():
-    return flask.render_template("urlshortener.html", short_url=None)
+    if flask.request.method == "GET":
+        short_url = "{}".format(flask.request.url_root)
+    elif flask.request.method == "POST":
+        connection = get_database_connection()
 
-
-@app.route("/", methods=["POST"])
-def urlshortener_shorten():
-    connection = get_database_connection()
-
-    cursor = connection.execute("update entries set long_url=? where long_url=?",
-            [flask.request.form["long_url"], flask.request.form["long_url"]])
-    connection.commit()
-
-    if not cursor.rowcount:
-        cursor = connection.execute("insert into entries (long_url) values (?)",
-                [flask.request.form["long_url"]])
+        cursor = connection.execute("update entries set long_url=? where long_url=?",
+                [flask.request.form["long_url"], flask.request.form["long_url"]])
         connection.commit()
 
-    cursor = connection.execute("select short_url from entries where long_url=?",
-            [flask.request.form["long_url"]])
+        if not cursor.rowcount:
+            cursor = connection.execute("insert into entries (long_url) values (?)",
+                    [flask.request.form["long_url"]])
+            connection.commit()
 
-    short_url = "{}{}".format(flask.request.url_root, cursor.fetchone()[0])
+        cursor = connection.execute("select short_url from entries where long_url=?",
+                [flask.request.form["long_url"]])
+
+        short_url = "{}{}".format(flask.request.url_root, cursor.fetchone()[0])
 
     return flask.render_template("urlshortener.html", short_url=short_url)
 
 
 @app.route("/<path:short_url>", methods=["GET"])
-def urlshortener_lengthen(short_url):
+def redirect(short_url):
     connection = get_database_connection()
 
-    cursor = connection.execute("select long_url from entries where short_url=?",
+    cursor = connection.execute("select * from entries where short_url=?",
             [short_url])
 
-    long_url = cursor.fetchone()
+    row = cursor.fetchone()
 
-    if long_url is None:
-        return flask.url_for("urlshortener")
+    if row is None:
+        long_url = flask.url_for("urlshortener")
+    else:
+        long_url = row[1]
 
     return flask.redirect(long_url)
 
